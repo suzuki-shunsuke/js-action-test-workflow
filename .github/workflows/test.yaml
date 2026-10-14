@@ -1,0 +1,91 @@
+---
+name: Test JavaScript Action
+on:
+  workflow_call:
+    inputs:
+      working_directory:
+        description: The directory where package.json and package-lock.json exist
+        required: false
+        type: string
+        default: "."
+      node-version-file:
+        required: false
+        type: string
+        default: .node-version
+      npm_artifact_name:
+        description: |
+          The name of the artifact created by suzuki-shunsuke/download-npm-package-action in the caller workflow.
+          If this is set, the npm job is skipped and the artifact is used instead,
+          so the caller can share the artifact with other jobs.
+        required: false
+        type: string
+    secrets:
+      TAKUMI_GUARD_BOT_ID:
+        required: false
+
+permissions: {}
+
+jobs:
+  npm:
+    # Install npm packages through Takumi Guard, which requires id-token: write.
+    # The test job runs code of the repository and its dependencies,
+    # so it must not have id-token: write.
+    # node_modules is passed to the test job via an artifact.
+    # Skipped if the caller passes its own artifact via npm_artifact_name.
+    if: inputs.npm_artifact_name == ''
+    uses: suzuki-shunsuke/download-npm-package-action/.github/workflows/download.yaml@ebbf371f6e38b49824a73f8c6680e2e1f83db2e8 # v0.0.1
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      working_directory: ${{inputs.working_directory}}
+      node-version-file: ${{inputs.node-version-file}}
+      artifact_name: node_modules-test
+    secrets:
+      TAKUMI_GUARD_BOT_ID: ${{secrets.TAKUMI_GUARD_BOT_ID}}
+
+  test:
+    timeout-minutes: 30
+    runs-on: ubuntu-26.04
+    needs: npm
+    # Run even if the npm job is skipped because npm_artifact_name is set
+    if: |
+      !cancelled() && (needs.npm.result == 'success' || needs.npm.result == 'skipped')
+    permissions:
+      contents: read # To checkout private repository
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The commit where npm packages were installed. Empty if the npm job is skipped.
+          ref: ${{needs.npm.outputs.sha}}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: ${{inputs.node-version-file}}
+
+      - name: Restore node_modules
+        uses: suzuki-shunsuke/download-npm-package-action/restore@ebbf371f6e38b49824a73f8c6680e2e1f83db2e8 # v0.0.1
+        with:
+          working_directory: ${{inputs.working_directory}}
+          artifact_name: ${{inputs.npm_artifact_name || 'node_modules-test'}}
+
+      - name: List npm scripts
+        id: scripts
+        working-directory: ${{inputs.working_directory}}
+        run: |
+          for script in lint test; do
+            echo "$script=$(jq -r --arg s "$script" 'has("scripts") and (.scripts | has($s))' package.json)" >> "$GITHUB_OUTPUT"
+          done
+
+      - name: npm run lint
+        if: steps.scripts.outputs.lint == 'true'
+        working-directory: ${{inputs.working_directory}}
+        run: npm run lint
+
+      - name: npm test
+        if: steps.scripts.outputs.test == 'true'
+        working-directory: ${{inputs.working_directory}}
+        run: npm test

@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "scripts": {
+    "lint": "node lint.js",
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "semver": "7.7.2"
+  }
+}
