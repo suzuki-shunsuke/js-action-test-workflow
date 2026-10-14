@@ -1,0 +1,47 @@
+---
+permissions: {}
+on:
+  workflow_call:
+    secrets:
+      TAKUMI_GUARD_BOT_ID:
+        required: false
+jobs:
+  test:
+    uses: suzuki-shunsuke/test-workflow/.github/workflows/test.yaml@51ece8dcaabff59820bfb2053c56e3cb281cf7b2 # v0.0.1
+    with:
+      aqua_version: v2.64.0
+    permissions:
+      pull-requests: read
+      contents: read
+
+  with-scripts:
+    uses: $/.github/workflows/test.yaml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      working_directory: testdata/with-scripts
+    secrets:
+      TAKUMI_GUARD_BOT_ID: ${{secrets.TAKUMI_GUARD_BOT_ID}}
+
+  # Share node_modules installed in the caller workflow
+  npm:
+    uses: suzuki-shunsuke/download-npm-package-action/.github/workflows/download.yaml@main
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      working_directory: testdata/without-scripts
+      artifact_name: node_modules-without-scripts
+    secrets:
+      TAKUMI_GUARD_BOT_ID: ${{secrets.TAKUMI_GUARD_BOT_ID}}
+
+  without-scripts:
+    needs: npm
+    uses: $/.github/workflows/test.yaml
+    permissions:
+      contents: read
+      id-token: write # The skipped npm job still requires this permission
+    with:
+      working_directory: testdata/without-scripts
+      npm_artifact_name: node_modules-without-scripts
