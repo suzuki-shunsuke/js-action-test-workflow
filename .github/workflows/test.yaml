@@ -33,7 +33,7 @@ jobs:
     # node_modules is passed to the test job via an artifact.
     # Skipped if the caller passes its own artifact via npm_artifact_name.
     if: inputs.npm_artifact_name == ''
-    uses: suzuki-shunsuke/download-npm-package-action/.github/workflows/download.yaml@main
+    uses: suzuki-shunsuke/download-npm-package-action/.github/workflows/download.yaml@ebbf371f6e38b49824a73f8c6680e2e1f83db2e8 # v0.0.1
     permissions:
       contents: read
       id-token: write
@@ -67,7 +67,7 @@ jobs:
           node-version-file: ${{inputs.node-version-file}}
 
       - name: Restore node_modules
-        uses: suzuki-shunsuke/download-npm-package-action/restore@main
+        uses: suzuki-shunsuke/download-npm-package-action/restore@ebbf371f6e38b49824a73f8c6680e2e1f83db2e8 # v0.0.1
         with:
           working_directory: ${{inputs.working_directory}}
           artifact_name: ${{inputs.npm_artifact_name || 'node_modules-test'}}
