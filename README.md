@@ -25,12 +25,14 @@ jobs:
 - `working_directory`: The directory where package.json and package-lock.json exist. The default is `.`
 - `node-version-file`: The default is `.node-version`
 - `npm_artifact_name`: See below
+- `ref`: The git ref to checkout. By default, the default ref of actions/checkout is used. If `npm_artifact_name` is set, set this to the commit where the artifact was created
 
 ### Share node_modules with other jobs
 
 By default, the workflow installs npm packages in its own job.
 If you want to share `node_modules` with other jobs, install them with [download-npm-package-action](https://github.com/suzuki-shunsuke/download-npm-package-action) in the caller workflow and pass the artifact name via `npm_artifact_name`.
 Then the workflow skips installing npm packages.
+Pass the output `sha` of download-npm-package-action's reusable workflow as `ref`, so the workflow checks out the commit where `node_modules` was installed.
 
 ```yaml
 jobs:
@@ -49,6 +51,7 @@ jobs:
     uses: suzuki-shunsuke/js-action-test-workflow/.github/workflows/test.yaml@main
     with:
       npm_artifact_name: node_modules
+      ref: ${{needs.npm.outputs.sha}}
     permissions:
       contents: read
       id-token: write # The skipped npm job still requires this permission

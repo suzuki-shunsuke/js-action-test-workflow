@@ -31,6 +31,8 @@ jobs:
       contents: read
       id-token: write
     with:
+      # A ref different from the default ref, to test that the test job checks out inputs.ref
+      ref: ${{github.event.pull_request.head.sha}}
       working_directory: testdata/without-scripts
       artifact_name: node_modules-without-scripts
     secrets:
@@ -45,3 +47,4 @@ jobs:
     with:
       working_directory: testdata/without-scripts
       npm_artifact_name: node_modules-without-scripts
+      ref: ${{needs.npm.outputs.sha}}
