@@ -17,6 +17,13 @@ on:
           The name of the artifact created by suzuki-shunsuke/download-npm-package-action in the caller workflow.
           If this is set, the npm job is skipped and the artifact is used instead,
           so the caller can share the artifact with other jobs.
+          Set ref to the commit where the artifact was created (the output sha of download-npm-package-action's reusable workflow).
+        required: false
+        type: string
+      ref:
+        description: |
+          The git ref to checkout. If empty, the default ref of actions/checkout is used.
+          If npm_artifact_name is set, set this to the commit where the artifact was created.
         required: false
         type: string
     secrets:
@@ -38,6 +45,7 @@ jobs:
       contents: read
       id-token: write
     with:
+      ref: ${{inputs.ref}}
       working_directory: ${{inputs.working_directory}}
       node-version-file: ${{inputs.node-version-file}}
       artifact_name: node_modules-test
@@ -57,8 +65,8 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # The commit where npm packages were installed. Empty if the npm job is skipped.
-          ref: ${{needs.npm.outputs.sha}}
+          # The commit where npm packages were installed. If the npm job is skipped, inputs.ref is used.
+          ref: ${{needs.npm.outputs.sha || inputs.ref}}
           persist-credentials: false
 
       - name: Set up Node.js
