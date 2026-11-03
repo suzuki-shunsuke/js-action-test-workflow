@@ -40,7 +40,7 @@ jobs:
     # node_modules is passed to the test job via an artifact.
     # Skipped if the caller passes its own artifact via npm_artifact_name.
     if: inputs.npm_artifact_name == ''
-    uses: suzuki-shunsuke/download-npm-package-action/.github/workflows/download.yaml@v0.0.4
+    uses: suzuki-shunsuke/download-npm-package-action/.github/workflows/download.yaml@cd93d0e45a1804793f6daaf4c24bf55ccf12f494 # v0.0.4
     permissions:
       contents: read
       id-token: write
@@ -63,19 +63,19 @@ jobs:
       contents: read # To checkout private repository
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # The commit where npm packages were installed. If the npm job is skipped, inputs.ref is used.
           ref: ${{needs.npm.outputs.sha || inputs.ref}}
           persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7.1.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: ${{inputs.node-version-file}}
 
       - name: Restore node_modules
-        uses: suzuki-shunsuke/download-npm-package-action/restore@v0.0.4
+        uses: suzuki-shunsuke/download-npm-package-action/restore@cd93d0e45a1804793f6daaf4c24bf55ccf12f494 # v0.0.4
         with:
           working_directory: ${{inputs.working_directory}}
           artifact_name: ${{inputs.npm_artifact_name || 'node_modules-test'}}
